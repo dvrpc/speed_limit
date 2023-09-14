@@ -30,14 +30,27 @@ inrix.to_postgis(rf"inrix{inrix_year}", con=ENGINE, if_exists="replace")
 typologies = inrix = gpd.read_file(
     rf"{ev.DATA_ROOT}\shapefiles\{typologies_filename}.shp"
 )
+# rename geometry column
+# typologies = typologies.rename_geometry("geom", inplace=True)
+
 typologies.to_postgis("typologies", con=ENGINE, if_exists="replace")
+
+# rename the geometry column to geom so it works with conflation tool
+Q_rename = """
+    ALTER TABLE typologies
+    RENAME COLUMN geometry to geom;
+"""
+from sqlalchemy import text
+
+with ENGINE.connect() as conn:
+    result = conn.execute(text(Q_rename))
 
 # filter inrix to just philadelphia
 Q_PhilaInrix = rf"""
     select *, st_transform(geometry, 4326) as geom
     from (
         select *
-        from inrix{inrix_year} i 
+        from inrix{inrix_year} i
         where i."County" = 'PHILADELPHIA'
     ) foo
 """
@@ -46,6 +59,8 @@ phila_inrix = gpd.GeoDataFrame.from_postgis(
     con=ENGINE,
     geom_col="geom",
 )
+
+
 # write to postgis
 phila_inrix.to_postgis(rf"phila_inrix_{inrix_year}", con=ENGINE, if_exists="replace")
 
