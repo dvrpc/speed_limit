@@ -27,9 +27,7 @@ from env_vars import GIS_ENGINE, ENGINE
 inrix = gpd.read_file(rf"{ev.DATA_ROOT}\shapefiles\{inrix_filename}.shp")
 inrix.to_postgis(rf"inrix{inrix_year}", con=ENGINE, if_exists="replace")
 
-typologies = inrix = gpd.read_file(
-    rf"{ev.DATA_ROOT}\shapefiles\{typologies_filename}.shp"
-)
+typologies = gpd.read_file(rf"{ev.DATA_ROOT}\shapefiles\{typologies_filename}.shp")
 # rename geometry column
 # typologies = typologies.rename_geometry("geom", inplace=True)
 
