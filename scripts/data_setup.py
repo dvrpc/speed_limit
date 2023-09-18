@@ -25,6 +25,7 @@ from env_vars import GIS_ENGINE, ENGINE
 
 
 typologies = gpd.read_file(rf"{ev.DATA_ROOT}\shapefiles\{typologies_filename}.shp")
+typologies = typologies.to_crs(26918)
 typologies.to_postgis("typologies", con=ENGINE, if_exists="replace")
 
 # rename the geometry column to geom so it works with conflation tool
