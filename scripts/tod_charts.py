@@ -7,7 +7,7 @@ from env_vars import ENGINE
 import matplotlib.pyplot as plot
 
 
-def tod_speed():
+def tod_avg_speed():
     df = pd.read_sql_query(
         rf"""select "SPD_LIMIT",
                 avg(dif0610) as adif0610,
@@ -65,7 +65,40 @@ def tod_speed():
     return df
 
 
-def create_bar_chart(df, spd):
+def top5perc_speed(spd):
+    df = pd.read_sql_query(
+        rf"""select i."SPD_LIMIT",
+                    (i.spdwkd0610 - i."SPD_LIMIT") as dif0610,
+                    (i.spdwkd1519 - i."SPD_LIMIT") as dif1519, 
+                    (i.spdwkd0006 - i."SPD_LIMIT") as dif0006, 
+                    (i.spdwkd0607 - i."SPD_LIMIT") as dif0607, 
+                    (i.spdwkd0708 - i."SPD_LIMIT") as dif0708, 
+                    (i.spdwkd0809 - i."SPD_LIMIT") as dif0809, 
+                    (i.spdwkd0910 - i."SPD_LIMIT") as dif0910, 
+                    (i.spdwkd1011 - i."SPD_LIMIT") as dif1011, 
+                    (i.spdwkd1112 - i."SPD_LIMIT") as dif1112, 
+                    (i.spdwkd1213 - i."SPD_LIMIT") as dif1213, 
+                    (i.spdwkd1314 - i."SPD_LIMIT") as dif1314, 
+                    (i.spdwkd1415 - i."SPD_LIMIT") as dif1415, 
+                    (i.spdwkd1516 - i."SPD_LIMIT") as dif1516, 
+                    (i.spdwkd1617 - i."SPD_LIMIT") as dif1617, 
+                    (i.spdwkd1718 - i."SPD_LIMIT") as dif1718, 
+                    (i.spdwkd1819 - i."SPD_LIMIT") as dif1819, 
+                    (i.spdwkd1920 - i."SPD_LIMIT") as dif1920, 
+                    (i.spdwkd2021 - i."SPD_LIMIT") as dif2021, 
+                    (i.spdwkd2122 - i."SPD_LIMIT") as dif2122, 
+                    (i.spdwkd2223 - i."SPD_LIMIT") as dif2223, 
+                    (i.spdwkd2300 - i."SPD_LIMIT") as dif2300 
+                from rejoined.inrix i
+                where i."SPD_LIMIT" = {spd}
+            """,
+        con=ENGINE,
+    )
+
+    return df
+
+
+def create_bar_chart(df, spd, title):
     spds = [25, 30, 35, 40, 45, 50]
     x = spds.index(spd)
 
@@ -93,16 +126,56 @@ def create_bar_chart(df, spd):
         "11PM-12AM",
     ]
 
-    plot.figure(figsize=(10, 4))
+    plot.figure(figsize=(10, 6))
     plot.bar(times, data)
-    plot.title(f"Travel Speed vs Posted speed by TOD: {spd}mph Roads")
+    plot.title(f"{title}: {spd}mph Roads")
     plot.xlabel("Time of Day")
-    plot.ylabel("Average Distance from Posted Speed")
-    plot.xticks(rotation=90)
+    plot.ylabel("Difference from Posted Speed")
+    plot.xticks(rotation=65)
     # plot.show()
-    plot.savefig(f"{ev.DATA_ROOT}/{spd}mph_difference_byTOD.png")
+    plot.savefig(f"{ev.DATA_ROOT}/{title}+{spd}+.png")
+
+
+def quantile_bar_chart(df, spd, title):
+    spds = [25, 30, 35, 40, 45, 50]
+    x = spds.index(spd)
+
+    l = df.quantile(0.95)
+    data = []
+    for i in range(4, 22):
+        data.append(l[i])
+    times = [
+        "6AM-7AM",
+        "7AM-8AM",
+        "8AM-9AM",
+        "9AM-10AM",
+        "10AM-11AM",
+        "11AM-12PM",
+        "12PM-1PM",
+        "1PM-2PM",
+        "2PM-3PM",
+        "3PM-4PM",
+        "4PM-5PM",
+        "5PM-6PM",
+        "6PM-7PM",
+        "7PM-8PM",
+        "8PM-9PM",
+        "9PM-10PM",
+        "10PM-11PM",
+        "11PM-12AM",
+    ]
+
+    plot.figure(figsize=(10, 6))
+    plot.bar(times, data)
+    plot.title(f"{title}: {spd}mph Roads")
+    plot.xlabel("Time of Day")
+    plot.ylabel("Difference from Posted Speed")
+    plot.xticks(rotation=65)
+    # plot.show()
+    plot.savefig(f"{ev.DATA_ROOT}/{title}{spd}.png")
 
 
 spds = [25, 30, 35, 40, 45, 50]
 for s in spds:
-    create_bar_chart(tod_speed(), s)
+    create_bar_chart(tod_avg_speed(), s, "Average Travel Speed vs Posted Speed by TOD")
+    quantile_bar_chart(top5perc_speed(s), s, "Top 5 Percent Speeds by TOD")
