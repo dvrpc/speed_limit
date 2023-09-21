@@ -41,23 +41,25 @@ from sqlalchemy import text
 with ENGINE.connect() as conn:
     result = conn.execute(text(Q_rename))
 
-# # read inrix from GIS database
-# inrix = gpd.GeoDataFrame.from_postgis(
-#     """select objectid, segid, roadname, county, startlat, startlong, endlat, endlong, refspdmean, refspdmin, refspdmax, shape as geom
-# from transportation.cmp2021_inrix_traveltimedata cit
-# where cit.county = 'PHILADELPHIA' """,
-#     con=GIS_ENGINE,
-#     geom_col="geom",
-# )
-# # write to postgis
-# inrix.to_postgis("inrix_2021", con=ENGINE, if_exists="replace")
+# read inrix from GIS database
+inrix = gpd.GeoDataFrame.from_postgis(
+    """select objectid, segid, roadname, county, startlat, startlong, endlat, endlong, refspdmean, refspdmin, refspdmax, 
+    spdwkd, spdwkd0610, spdwkd1519, spdwkd0006, spdwkd0607, spdwkd0708, spdwkd0809, spdwkd0910, spdwkd1011, spdwkd1112, spdwkd1213, 
+    spdwkd1314, spdwkd1415, spdwkd1516, spdwkd1617, spdwkd1718, spdwkd1819, spdwkd1920, spdwkd2021, spdwkd2122, spdwkd2223, spdwkd2300, shape as geom
+from transportation.cmp2021_inrix_traveltimedata cit
+where cit.county = 'PHILADELPHIA' """,
+    con=GIS_ENGINE,
+    geom_col="geom",
+)
+# write to postgis
+inrix.to_postgis("inrix_2021", con=ENGINE, if_exists="replace")
 
 
-# # read HIN from GIS database
-# hin = gpd.GeoDataFrame.from_postgis(
-#     """SELECT * FROM transportation.philly_highinjurynetwork p""",
-#     con=GIS_ENGINE,
-#     geom_col="shape",
-# )
-# # write to postgis
-# hin.to_postgis("hin", con=ENGINE, if_exists="replace")
+# read HIN from GIS database
+hin = gpd.GeoDataFrame.from_postgis(
+    """SELECT * FROM transportation.philly_highinjurynetwork p""",
+    con=GIS_ENGINE,
+    geom_col="shape",
+)
+# write to postgis
+hin.to_postgis("hin", con=ENGINE, if_exists="replace")
