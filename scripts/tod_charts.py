@@ -133,7 +133,7 @@ def create_bar_chart(df, spd, title):
     plot.ylabel("Difference from Posted Speed")
     plot.xticks(rotation=65)
     # plot.show()
-    plot.savefig(f"{ev.DATA_ROOT}/{title}+{spd}+.png")
+    plot.savefig(f"{ev.DATA_ROOT}/{title}{spd}.png")
 
 
 def quantile_bar_chart(df, spd, title):
