@@ -51,7 +51,7 @@ parso==0.8.3
 pg-data-etl==0.3.9
 pickleshare==0.7.5
 Pillow==10.0.0
-pip==20.1.1
+pip==23.3
 planbelt==0.5.0
 platformdirs==3.10.0
 pooch==1.7.0
