@@ -15,6 +15,12 @@ This script filters and imports the required datasets from provided shapefiles a
 
 """
 
+import geopandas as gpd
+import pandas as pd
+from sqlalchemy_utils import database_exists, create_database
+import env_vars as ev
+from env_vars import GIS_ENGINE, ENGINE
+
 typologies_filename = "_PennDOT_Typologies"
 
 # list of tables to rename geometry column to geom from shape
@@ -23,17 +29,11 @@ s_list = [
     "pa_centerline",
     "philly_bike_network",
     "pedestriannetwork_gaps",
+    "hin",
 ]
 
 # list of tables to rename geometry column from geometry to geom and lowercase object id
 g_list = ["typologies", "urbancore"]
-
-
-import geopandas as gpd
-import pandas as pd
-from sqlalchemy_utils import database_exists, create_database
-import env_vars as ev
-from env_vars import GIS_ENGINE, ENGINE
 
 
 # read typologies from shapefile
@@ -60,11 +60,11 @@ hin.to_postgis("hin", con=ENGINE, if_exists="replace")
 # read pa_centerline from GIS database
 # will need to be clipped to county boundary
 pac = gpd.GeoDataFrame.from_postgis(
-    """SELECT * 
+    """SELECT p.* 
     FROM transportation.pa_centerline p, 
         (select cb.*
         from boundaries.countyboundaries cb
-        where co_name = 'Philadelphia) a
+        where co_name = 'Philadelphia') a
     where st_intersects(p.shape, a.shape)""",
     con=GIS_ENGINE,
     geom_col="shape",
@@ -92,11 +92,11 @@ pbn.to_postgis("philly_bike_network", con=ENGINE, if_exists="replace")
 
 # read sidewalk gaps from GIS database and clip to philadelphia
 png = gpd.GeoDataFrame.from_postgis(
-    """SELECT * 
+    """SELECT p.* 
     FROM transportation.pedestriannetwork_gaps p,
         (select cb.*
         from boundaries.countyboundaries cb
-        where co_name = 'Philadelphia) a
+        where co_name = 'Philadelphia') a
     where st_intersects(p.shape, a.shape)""",
     con=GIS_ENGINE,
     geom_col="shape",

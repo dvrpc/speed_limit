@@ -32,5 +32,5 @@ To run any of the scripts in this repo, activate the conda environment, change d
 d:
 cd dvrpc_shared/speed_limit
 ve\scripts\activate
-python /scripts/{script_name}.py
+python scripts/{script_name}.py
 ```
