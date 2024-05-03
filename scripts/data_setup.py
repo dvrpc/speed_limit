@@ -26,7 +26,7 @@ s_list = [
     "circuittrails",
     "pa_centerline",
     "philly_bike_network",
-    "pedestriannetwork_gaps",
+    "ped_network_gaps",
     "hin",
 ]
 
@@ -58,8 +58,8 @@ hin.to_postgis("hin", con=ENGINE, if_exists="replace")
 # read pa_centerline from GIS database
 # will need to be clipped to county boundary
 pac = gpd.GeoDataFrame.from_postgis(
-    """SELECT p.* 
-    FROM transportation.pa_centerline p, 
+    """SELECT p.*
+    FROM transportation.pa_centerline p,
         (select cb.*
         from boundaries.countyboundaries cb
         where co_name = 'Philadelphia') a
@@ -90,7 +90,7 @@ pbn.to_postgis("philly_bike_network", con=ENGINE, if_exists="replace")
 
 # read sidewalk gaps from GIS database
 png = gpd.GeoDataFrame.from_postgis(
-    """SELECT p.* 
+    """SELECT p.*
     FROM (select p.objectid, p.hwy_tag, p.sw_ratio, st_transform(p.shape, 26918) as shape from transportation.pedestriannetwork_gaps p) p,
         (select cb.*
         from boundaries.countyboundaries cb
@@ -102,31 +102,36 @@ png = gpd.GeoDataFrame.from_postgis(
 # write to postgis
 png.to_postgis("ped_network_gaps", con=ENGINE, if_exists="replace")
 
+
 from sqlalchemy import text
 
 
 # rename columns so they work with conflation tool
 def geometry_rename(g_tbl):
     with ENGINE.connect() as conn:
-        result = conn.execute(
-            rf"""
+        conn.execute(
+            text(
+                rf"""
             ALTER TABLE {g_tbl}
             RENAME COLUMN geometry to geom;
             ALTER TABLE {g_tbl}
             RENAME COLUMN "OBJECTID" to objectid;
             COMMIT;
         """
+            )
         )
 
 
 def shape_rename(s_tbl):
     with ENGINE.connect() as conn:
-        result = conn.execute(
-            rf"""
+        conn.execute(
+            text(
+                rf"""
         ALTER TABLE {s_tbl}
         RENAME COLUMN shape to geom;
         COMMIT;
     """
+            )
         )
 
 
