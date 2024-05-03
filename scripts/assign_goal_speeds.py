@@ -26,178 +26,218 @@ from sqlalchemy import text
 #         )
 #     )
 
-### assign modal mixing
-# add columns for bike, ped, and overall modal mixing
-with ENGINE.connect() as conn:
-    conn.execute(
-        text(
-            """
-            alter table typologies_joined add column if not exists bike_mix text;
-            alter table typologies_joined add column if not exists ped_mix text;
-            alter table typologies_joined add column if not exists modal_mix text;
-            COMMIT;
-            """
-        )
-    )
+# ### assign modal mixing
+# # add columns for bike, ped, and overall modal mixing
+# with ENGINE.connect() as conn:
+#     conn.execute(
+#         text(
+#             """
+#             alter table typologies_joined add column if not exists bike_mix text;
+#             alter table typologies_joined add column if not exists ped_mix text;
+#             alter table typologies_joined add column if not exists modal_mix text;
+#             COMMIT;
+#             """
+#         )
+#     )
+
 ## update columns based on value ranges
-# bike mix
-with ENGINE.connect() as conn:
-    conn.execute(
-        text(
-            """
-            update table typologies_joined
-            set bike_mix = 'high'
-            where "type" = 'Bus Bike Lane'
-            or "type" = 'Sharrow'
-            or "type" IS NULL;
+# bike mixm
+from sqlalchemy import update, MetaData
 
-            update table typologies_joined
-            set bike_mix = 'mod'
-            where or "type" = 'Conventional w Sharrows'
-            or "type" = 'Conventional'
-            or "type" = 'Paint Buffered'
-            or "type" = 'Two Way Unprotected Bicycle Lane';
+# get table in sqlalchemy
+conn = ENGINE.connect()
+META_DATA = MetaData(bind=conn, reflect=True)
+T = META_DATA.tables["typologies_joined"]
+# update
+stmt1 = update(T).values(bike_mix="high").where(T.c.type == "Bus Bike Lane")
+stmt2 = update(T).values(bike_mix="high").where(T.c.type == "Sharrow")
+stmt3 = update(T).values(bike_mix="high").where(T.c.type == None)
+conn.execute(stmt1)
+conn.execute(stmt2)
+conn.execute(stmt3)
+conn.commit()
 
-            update table typologies_joined
-            set bike_mix = 'low'
-            where "type" = 'One Way Protected Bicycle Lane';
-            
-            COMMIT;
-            """
-        )
-    )
 
-# ped mix
-with ENGINE.connect() as conn:
-    conn.execute(
-        text(
-            """
-            update table typologies_joined
-            set ped_mix = 'high'
-            where sw_ratio < 0.45;
+# # Update query for the second table
+# stmt2 = (
+#     update(orders)
+#     .values(product="New Product", quantity=20)
+#     .where(orders.c.user_id == 1)
+# )
 
-            update table typologies_joined
-            set ped_mix = 'mod'
-            where sw_ratio >= 0.45
-            and sw_ratio <= 0.82;
+# # Execute both update queries
 
-            update table typologies_joined
-            set ped_mix = 'low'
-            where sw_ratio > 0.82;
-            
-            COMMIT;
-            """
-        )
-    )
 
-# circuit overwrite: if roadway is adjacent to circuit trail, bike/ped measures are overwritten to low/low mixing
-with ENGINE.connect() as conn:
-    conn.execute(
-        text(
-            """
-            update table typologies_joined
-            set bike_mix = 'low'
-            where circuit = 'Existing';
+# u = update(T)
+# u = u.values({"bike_mix": "high"})
+# u = u.where(
+#     and_(
+#         T.c.type == "Bus Bike Lane",
+#     )
+# )
 
-            update table typologies_joined
-            set ped_mix = 'low'
-            where circuit = 'Existing';
-            
-            COMMIT;
-            """
-        )
-    )
-# overall modal mix
-with ENGINE.connect() as conn:
-    conn.execute(
-        text(
-            """
-            update table typologies_joined
-            set modal_mix = 'high'
-            where bike_mix = 'high'
-            and ped_mix = 'high';
+# # Execute the update query using a connection
+# with ENGINE.connect() as conn:
+#     conn.execute(u)
 
-            update table typologies_joined
-            set modal_mix = 'high'
-            where bike_mix = 'high'
-            and ped_mix = 'mod';
 
-            update table typologies_joined
-            set modal_mix = 'high'
-            where bike_mix = 'mod'
-            and ped_mix = 'high';
+# with ENGINE.connect() as conn:
+#     conn.execute(
+#         text(
+#             """
+#             update table typologies_joined
+#             set bike_mix = 'high'
+#             where "type" = 'Bus Bike Lane'
+#             or "type" = 'Sharrow'
+#             or "type" IS NULL;
 
-            update table typologies_joined
-            set modal_mix = 'mod'
-            where bike_mix = 'mod'
-            and ped_mix = 'mod';
+#             update table typologies_joined
+#             set bike_mix = 'mod'
+#             where or "type" = 'Conventional w Sharrows'
+#             or "type" = 'Conventional'
+#             or "type" = 'Paint Buffered'
+#             or "type" = 'Two Way Unprotected Bicycle Lane';
 
-            update table typologies_joined
-            set modal_mix = 'mod'
-            where bike_mix = 'high'
-            and ped_mix = 'low';
+#             update table typologies_joined
+#             set bike_mix = 'low'
+#             where "type" = 'One Way Protected Bicycle Lane';
 
-            update table typologies_joined
-            set modal_mix = 'mod'
-            where bike_mix = 'low'
-            and ped_mix = 'high';
+#             COMMIT;
+#             """
+#         )
+#     )
 
-            update table typologies_joined
-            set modal_mix = 'low'
-            where bike_mix = 'low'
-            and ped_mix = 'low';
+# # ped mix
+# with ENGINE.connect() as conn:
+#     conn.execute(
+#         text(
+#             """
+#             update table typologies_joined
+#             set ped_mix = 'high'
+#             where sw_ratio < 0.45;
 
-            update table typologies_joined
-            set modal_mix = 'low'
-            where bike_mix = 'mod'
-            and ped_mix = 'low';
+#             update table typologies_joined
+#             set ped_mix = 'mod'
+#             where sw_ratio >= 0.45
+#             and sw_ratio <= 0.82;
 
-            update table typologies_joined
-            set modal_mix = 'low'
-            where bike_mix = 'low'
-            and ped_mix = 'mod';
-            
-            COMMIT;
-            """
-        )
-    )
+#             update table typologies_joined
+#             set ped_mix = 'low'
+#             where sw_ratio > 0.82;
 
-### overlay urban core
-# read from db
-tbl = gpd.GeoDataFrame.from_postgis(
-    """select tj.*, st_intersects(tj.geom, u.geom ) as uc_overlap
-        from typologies_joined tj, urbancore u""",
-    con=ENGINE,
-    geom_col="geom",
-)
-# put results back in db
-tbl.to_postgis("typologies_joined", con=ENGINE, if_exists="replace")
+#             COMMIT;
+#             """
+#         )
+#     )
 
-### assign activity levels
-with ENGINE.connect() as conn:
-    conn.execute(
-        text(
-            """
-            alter table typologies_joined add column if not exists activity_level text;
-           
-            update table typologies_joined
-            set activity_level = 'low'
-            where "TYPOLOGY" = 'Narrow Neighborhood'
-            or "TYPOLOGY" = 'Wide Neighborhood';
+# # circuit overwrite: if roadway is adjacent to circuit trail, bike/ped measures are overwritten to low/low mixing
+# with ENGINE.connect() as conn:
+#     conn.execute(
+#         text(
+#             """
+#             update table typologies_joined
+#             set bike_mix = 'low'
+#             where circuit = 'Existing';
 
-            update table typologies_joined
-            set activity_level = 'mod'
-            where "TYPOLOGY" = 'Narrow Connector'
-            or "TYPOLOGY" = 'Wide Connector';
+#             update table typologies_joined
+#             set ped_mix = 'low'
+#             where circuit = 'Existing';
 
-            update table typologies_joined
-            set activity_level = 'high'
-            where uc_overlap = TRUE;
+#             COMMIT;
+#             """
+#         )
+#     )
+# # overall modal mix
+# with ENGINE.connect() as conn:
+#     conn.execute(
+#         text(
+#             """
+#             update table typologies_joined
+#             set modal_mix = 'high'
+#             where bike_mix = 'high'
+#             and ped_mix = 'high';
 
-            COMMIT;
-            """
-        )
-    )
+#             update table typologies_joined
+#             set modal_mix = 'high'
+#             where bike_mix = 'high'
+#             and ped_mix = 'mod';
+
+#             update table typologies_joined
+#             set modal_mix = 'high'
+#             where bike_mix = 'mod'
+#             and ped_mix = 'high';
+
+#             update table typologies_joined
+#             set modal_mix = 'mod'
+#             where bike_mix = 'mod'
+#             and ped_mix = 'mod';
+
+#             update table typologies_joined
+#             set modal_mix = 'mod'
+#             where bike_mix = 'high'
+#             and ped_mix = 'low';
+
+#             update table typologies_joined
+#             set modal_mix = 'mod'
+#             where bike_mix = 'low'
+#             and ped_mix = 'high';
+
+#             update table typologies_joined
+#             set modal_mix = 'low'
+#             where bike_mix = 'low'
+#             and ped_mix = 'low';
+
+#             update table typologies_joined
+#             set modal_mix = 'low'
+#             where bike_mix = 'mod'
+#             and ped_mix = 'low';
+
+#             update table typologies_joined
+#             set modal_mix = 'low'
+#             where bike_mix = 'low'
+#             and ped_mix = 'mod';
+
+#             COMMIT;
+#             """
+#         )
+#     )
+
+# ### overlay urban core
+# # read from db
+# tbl = gpd.GeoDataFrame.from_postgis(
+#     """select tj.*, st_intersects(tj.geom, u.geom ) as uc_overlap
+#         from typologies_joined tj, urbancore u""",
+#     con=ENGINE,
+#     geom_col="geom",
+# )
+# # put results back in db
+# tbl.to_postgis("typologies_joined", con=ENGINE, if_exists="replace")
+
+# ### assign activity levels
+# with ENGINE.connect() as conn:
+#     conn.execute(
+#         text(
+#             """
+#             alter table typologies_joined add column if not exists activity_level text;
+
+#             update table typologies_joined
+#             set activity_level = 'low'
+#             where "TYPOLOGY" = 'Narrow Neighborhood'
+#             or "TYPOLOGY" = 'Wide Neighborhood';
+
+#             update table typologies_joined
+#             set activity_level = 'mod'
+#             where "TYPOLOGY" = 'Narrow Connector'
+#             or "TYPOLOGY" = 'Wide Connector';
+
+#             update table typologies_joined
+#             set activity_level = 'high'
+#             where uc_overlap = TRUE;
+
+#             COMMIT;
+#             """
+#         )
+#     )
 
 
 ### calculate intersection density
