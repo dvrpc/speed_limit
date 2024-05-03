@@ -18,6 +18,7 @@ import pandas as pd
 from sqlalchemy_utils import database_exists, create_database
 import env_vars as ev
 from env_vars import GIS_ENGINE, ENGINE
+from sqlalchemy import text
 
 typologies_filename = "_PennDOT_Typologies"
 
@@ -101,9 +102,6 @@ png = gpd.GeoDataFrame.from_postgis(
 )
 # write to postgis
 png.to_postgis("ped_network_gaps", con=ENGINE, if_exists="replace")
-
-
-from sqlalchemy import text
 
 
 # rename columns so they work with conflation tool
