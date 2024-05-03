@@ -40,205 +40,144 @@ from sqlalchemy import text
 #         )
 #     )
 
-## update columns based on value ranges
-# bike mixm
+
 from sqlalchemy import update, MetaData
+from geoalchemy2 import Geometry
 
-# get table in sqlalchemy
+## get table in sqlalchemy
 conn = ENGINE.connect()
-META_DATA = MetaData(bind=conn, reflect=True)
-T = META_DATA.tables["typologies_joined"]
-# update
-stmt1 = update(T).values(bike_mix="high").where(T.c.type == "Bus Bike Lane")
-stmt2 = update(T).values(bike_mix="high").where(T.c.type == "Sharrow")
-stmt3 = update(T).values(bike_mix="high").where(T.c.type == None)
-conn.execute(stmt1)
-conn.execute(stmt2)
-conn.execute(stmt3)
-conn.commit()
+meta = MetaData()
+meta.reflect(bind=ENGINE)
+T = meta.tables["typologies_joined"]
+## update queries
+# bike mix
+b1 = update(T).values(bike_mix="high").where(T.c.type == "Bus Bike Lane")
+b2 = update(T).values(bike_mix="high").where(T.c.type == "Sharrow")
+b3 = update(T).values(bike_mix="high").where(T.c.type == None)
+
+b4 = update(T).values(bike_mix="mod").where(T.c.type == "Conventional w Sharrows")
+b5 = update(T).values(bike_mix="mod").where(T.c.type == "Conventional")
+b6 = update(T).values(bike_mix="mod").where(T.c.type == "Paint Buffered")
+b7 = (
+    update(T)
+    .values(bike_mix="mod")
+    .where(T.c.type == "Two Way Unprotected Bicycle Lane")
+)
+
+b8 = (
+    update(T).values(bike_mix="low").where(T.c.type == "One Way Protected Bicycle Lane")
+)
+
+statements = [b1, b2, b3, b4, b5, b6, b7, b8]
+for s in statements:
+    conn.execute(s)
+    conn.commit()
+
+# ped mix
+s1 = update(T).values(ped_mix="high").where(T.c.sw_ratio < 0.45)
+s2 = (
+    update(T)
+    .values(ped_mix="mod")
+    .where(T.c.sw_ratio >= 0.45)
+    .where(T.c.sw_ratio <= 0.82)
+)
+s3 = update(T).values(ped_mix="low").where(T.c.sw_ratio > 0.82)
+
+statements = [s1, s2, s3]
+for s in statements:
+    conn.execute(s)
+    conn.commit()
 
 
-# # Update query for the second table
-# stmt2 = (
-#     update(orders)
-#     .values(product="New Product", quantity=20)
-#     .where(orders.c.user_id == 1)
-# )
+# circuit overwrite: if roadway is adjacent to circuit trail, bike/ped measures are overwritten to low/low mixing
+c1 = update(T).values(bike_mix="low").where(T.c.circuit == "Existing")
+c2 = update(T).values(ped_mix="low").where(T.c.circuit == "Existing")
+statements = [c1, c2]
+for s in statements:
+    conn.execute(s)
+    conn.commit()
 
-# # Execute both update queries
+# overall modal mix
+m1 = (
+    update(T)
+    .values(modal_mix="high")
+    .where(T.c.bike_mix == "high")
+    .where(T.c.ped_mix == "high")
+)
+m2 = (
+    update(T)
+    .values(modal_mix="high")
+    .where(T.c.bike_mix == "mod")
+    .where(T.c.ped_mix == "high")
+)
+m3 = (
+    update(T)
+    .values(modal_mix="high")
+    .where(T.c.bike_mix == "high")
+    .where(T.c.ped_mix == "mod")
+)
+m4 = (
+    update(T)
+    .values(modal_mix="mod")
+    .where(T.c.bike_mix == "mod")
+    .where(T.c.ped_mix == "mod")
+)
+m5 = (
+    update(T)
+    .values(modal_mix="mod")
+    .where(T.c.bike_mix == "high")
+    .where(T.c.ped_mix == "low")
+)
+m6 = (
+    update(T)
+    .values(modal_mix="mod")
+    .where(T.c.bike_mix == "low")
+    .where(T.c.ped_mix == "high")
+)
+m7 = (
+    update(T)
+    .values(modal_mix="low")
+    .where(T.c.bike_mix == "low")
+    .where(T.c.ped_mix == "low")
+)
+m8 = (
+    update(T)
+    .values(modal_mix="low")
+    .where(T.c.bike_mix == "mod")
+    .where(T.c.ped_mix == "low")
+)
+m9 = (
+    update(T)
+    .values(modal_mix="low")
+    .where(T.c.bike_mix == "low")
+    .where(T.c.ped_mix == "mod")
+)
+statements = [m1, m2, m3, m4, m5, m6, m7, m8, m9]
+for s in statements:
+    conn.execute(s)
+    conn.commit()
 
+### overlay urban core
+# read from db
+tbl = gpd.GeoDataFrame.from_postgis(
+    """select tj.*, st_intersects(tj.geom, u.geom ) as uc_overlap
+        from typologies_joined tj, urbancore u""",
+    con=ENGINE,
+    geom_col="geom",
+)
+# put results back in db
+tbl.to_postgis("typologies_joined", con=ENGINE, if_exists="replace")
 
-# u = update(T)
-# u = u.values({"bike_mix": "high"})
-# u = u.where(
-#     and_(
-#         T.c.type == "Bus Bike Lane",
-#     )
-# )
-
-# # Execute the update query using a connection
-# with ENGINE.connect() as conn:
-#     conn.execute(u)
-
-
-# with ENGINE.connect() as conn:
-#     conn.execute(
-#         text(
-#             """
-#             update table typologies_joined
-#             set bike_mix = 'high'
-#             where "type" = 'Bus Bike Lane'
-#             or "type" = 'Sharrow'
-#             or "type" IS NULL;
-
-#             update table typologies_joined
-#             set bike_mix = 'mod'
-#             where or "type" = 'Conventional w Sharrows'
-#             or "type" = 'Conventional'
-#             or "type" = 'Paint Buffered'
-#             or "type" = 'Two Way Unprotected Bicycle Lane';
-
-#             update table typologies_joined
-#             set bike_mix = 'low'
-#             where "type" = 'One Way Protected Bicycle Lane';
-
-#             COMMIT;
-#             """
-#         )
-#     )
-
-# # ped mix
-# with ENGINE.connect() as conn:
-#     conn.execute(
-#         text(
-#             """
-#             update table typologies_joined
-#             set ped_mix = 'high'
-#             where sw_ratio < 0.45;
-
-#             update table typologies_joined
-#             set ped_mix = 'mod'
-#             where sw_ratio >= 0.45
-#             and sw_ratio <= 0.82;
-
-#             update table typologies_joined
-#             set ped_mix = 'low'
-#             where sw_ratio > 0.82;
-
-#             COMMIT;
-#             """
-#         )
-#     )
-
-# # circuit overwrite: if roadway is adjacent to circuit trail, bike/ped measures are overwritten to low/low mixing
-# with ENGINE.connect() as conn:
-#     conn.execute(
-#         text(
-#             """
-#             update table typologies_joined
-#             set bike_mix = 'low'
-#             where circuit = 'Existing';
-
-#             update table typologies_joined
-#             set ped_mix = 'low'
-#             where circuit = 'Existing';
-
-#             COMMIT;
-#             """
-#         )
-#     )
-# # overall modal mix
-# with ENGINE.connect() as conn:
-#     conn.execute(
-#         text(
-#             """
-#             update table typologies_joined
-#             set modal_mix = 'high'
-#             where bike_mix = 'high'
-#             and ped_mix = 'high';
-
-#             update table typologies_joined
-#             set modal_mix = 'high'
-#             where bike_mix = 'high'
-#             and ped_mix = 'mod';
-
-#             update table typologies_joined
-#             set modal_mix = 'high'
-#             where bike_mix = 'mod'
-#             and ped_mix = 'high';
-
-#             update table typologies_joined
-#             set modal_mix = 'mod'
-#             where bike_mix = 'mod'
-#             and ped_mix = 'mod';
-
-#             update table typologies_joined
-#             set modal_mix = 'mod'
-#             where bike_mix = 'high'
-#             and ped_mix = 'low';
-
-#             update table typologies_joined
-#             set modal_mix = 'mod'
-#             where bike_mix = 'low'
-#             and ped_mix = 'high';
-
-#             update table typologies_joined
-#             set modal_mix = 'low'
-#             where bike_mix = 'low'
-#             and ped_mix = 'low';
-
-#             update table typologies_joined
-#             set modal_mix = 'low'
-#             where bike_mix = 'mod'
-#             and ped_mix = 'low';
-
-#             update table typologies_joined
-#             set modal_mix = 'low'
-#             where bike_mix = 'low'
-#             and ped_mix = 'mod';
-
-#             COMMIT;
-#             """
-#         )
-#     )
-
-# ### overlay urban core
-# # read from db
-# tbl = gpd.GeoDataFrame.from_postgis(
-#     """select tj.*, st_intersects(tj.geom, u.geom ) as uc_overlap
-#         from typologies_joined tj, urbancore u""",
-#     con=ENGINE,
-#     geom_col="geom",
-# )
-# # put results back in db
-# tbl.to_postgis("typologies_joined", con=ENGINE, if_exists="replace")
-
-# ### assign activity levels
-# with ENGINE.connect() as conn:
-#     conn.execute(
-#         text(
-#             """
-#             alter table typologies_joined add column if not exists activity_level text;
-
-#             update table typologies_joined
-#             set activity_level = 'low'
-#             where "TYPOLOGY" = 'Narrow Neighborhood'
-#             or "TYPOLOGY" = 'Wide Neighborhood';
-
-#             update table typologies_joined
-#             set activity_level = 'mod'
-#             where "TYPOLOGY" = 'Narrow Connector'
-#             or "TYPOLOGY" = 'Wide Connector';
-
-#             update table typologies_joined
-#             set activity_level = 'high'
-#             where uc_overlap = TRUE;
-
-#             COMMIT;
-#             """
-#         )
-#     )
-
+### assign activity levels
+a1 = update(T).values(activity_level="low").where(T.c.TYPOLOGY == "Narrow Neighborhood")
+a2 = update(T).values(activity_level="low").where(T.c.TYPOLOGY == "Wide Neighborhood")
+a3 = update(T).values(activity_level="mod").where(T.c.TYPOLOGY == "Narrow Connector")
+a4 = update(T).values(activity_level="mod").where(T.c.TYPOLOGY == "Wide Connector")
+a5 = update(T).values(activity_level="high").where(T.c.uc_overlap == True)
+statements = [a1, a2, a3, a4, a5]
+for s in statements:
+    conn.execute(s)
+    conn.commit()
 
 ### calculate intersection density
 # intersection points created in QGIS using the process outlined here: https://www.qgistutorials.com/en/docs/3/calculating_intersection_density.html
