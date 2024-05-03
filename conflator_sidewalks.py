@@ -12,8 +12,8 @@ conflator(
     "objectid",  # uid of base layer
     "typologies",  # base layer that you want to conflate to
     "b.sw_ratio",  # columns from conflate layer you want to include. if multiple, just use b. for each. like 'b.line, b.geom'
-    5,  # distance threshold in meters. 5 is a good starting point but might need to tune
-    70,  # overlap percentage. leave at 70, go smaller if many false negatives, bigger if many false postives
+    8,  # distance threshold in meters. 5 is a good starting point but might need to tune
+    75,  # overlap percentage. leave at 70, go smaller if many false negatives, bigger if many false postives
 )
 
 print("conflated!")
