@@ -45,6 +45,9 @@ urbancore = gpd.read_file(rf"{ev.DATA_ROOT}\urban_core.geojson")
 urbancore = urbancore.to_crs(26918)
 urbancore.to_postgis("urbancore", con=ENGINE, if_exists="replace")
 
+# read road intersections from geojson
+road_intersections = gpd.read_file(rf"{ev.DATA_ROOT}\road_intersections.geojson")
+road_intersections.to_postgis("road_intersections", con=ENGINE, if_exists="replace")
 
 # read HIN from GIS database
 hin = gpd.GeoDataFrame.from_postgis(

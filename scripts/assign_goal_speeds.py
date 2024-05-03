@@ -5,26 +5,26 @@ import env_vars as ev
 from env_vars import ENGINE
 from sqlalchemy import text
 
-### join conflated attributes
-with ENGINE.connect() as conn:
-    conn.execute(
-        text(
-            """
-        DROP TABLE IF EXISTS typologies_joined;
-        COMMIT;
-        CREATE TABLE typologies_joined AS
-        select t.*, ta."type", tb."sw_ratio", tc."circuit"
-        from public.typologies t 
-        left join rejoined.typologies_a ta
-        on t.objectid = ta.objectid 
-        left join rejoined.typologies_b tb
-        on t.objectid  = tb.objectid
-        left join rejoined.typologies_c tc
-        on t.objectid  = tc.objectid;
-        COMMIT;
-        """
-        )
-    )
+# ### join conflated attributes
+# with ENGINE.connect() as conn:
+#     conn.execute(
+#         text(
+#             """
+#         DROP TABLE IF EXISTS typologies_joined;
+#         COMMIT;
+#         CREATE TABLE typologies_joined AS
+#         select t.*, ta."type", tb."sw_ratio", tc."circuit"
+#         from public.typologies t
+#         left join rejoined.typologies_a ta
+#         on t.objectid = ta.objectid
+#         left join rejoined.typologies_b tb
+#         on t.objectid  = tb.objectid
+#         left join rejoined.typologies_c tc
+#         on t.objectid  = tc.objectid;
+#         COMMIT;
+#         """
+#         )
+#     )
 
 ### assign modal mixing
 # add columns for bike, ped, and overall modal mixing
@@ -163,7 +163,15 @@ with ENGINE.connect() as conn:
     )
 
 ### overlay urban core
-
+# read from db
+tbl = gpd.GeoDataFrame.from_postgis(
+    """select tj.*, st_intersects(tj.geom, u.geom ) as uc_overlap
+        from typologies_joined tj, urbancore u""",
+    con=ENGINE,
+    geom_col="geom",
+)
+# put results back in db
+tbl.to_postgis("typologies_joined", con=ENGINE, if_exists="replace")
 
 ### assign activity levels
 with ENGINE.connect() as conn:
@@ -192,8 +200,13 @@ with ENGINE.connect() as conn:
     )
 
 
-# calculate intersection density
-# buffer
+### calculate intersection density
+# intersection points created in QGIS using the process outlined here: https://www.qgistutorials.com/en/docs/3/calculating_intersection_density.html
+# buffer typology segments
+
+# count how many intersections points are within the buffer
+
+# divide by mileage and then by 4 to get avg intersections per quarter mile
 
 
 # assign conflict density
