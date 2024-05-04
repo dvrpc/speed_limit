@@ -27,7 +27,7 @@ from sqlalchemy import text
 #     )
 
 # ### assign modal mixing
-# # add columns for bike, ped, and overall modal mixing
+# # add columns for new fields
 # with ENGINE.connect() as conn:
 #     conn.execute(
 #         text(
@@ -35,6 +35,7 @@ from sqlalchemy import text
 #             alter table typologies_joined add column if not exists bike_mix text;
 #             alter table typologies_joined add column if not exists ped_mix text;
 #             alter table typologies_joined add column if not exists modal_mix text;
+#             alter table typologies_joined add column if not exists activ_level text;
 #             COMMIT;
 #             """
 #         )
@@ -159,33 +160,33 @@ T = meta.tables["typologies_joined"]
 #     conn.commit()
 
 
-### overlay urban core
-# read from db
-tbl = gpd.GeoDataFrame.from_postgis(
-    """select tj.*, foo.st_intersects as uc_overlap
-        from typologies_joined tj
-        inner join (
-            select distinct tj.objectid, st_intersects(tj.geom, u.geom)
-            from typologies_joined tj 
-            left join urbancore u 
-            on st_intersects(tj.geom, u.geom)) foo
-        on tj.objectid = foo.objectid""",
-    con=ENGINE,
-    geom_col="geom",
-)
-# put results back in db
-tbl.to_postgis("typologies_joined", con=ENGINE, if_exists="replace")
+# ### overlay urban core
+# # read from db
+# tbl = gpd.GeoDataFrame.from_postgis(
+#     """select tj.*, foo.st_intersects as uc_overlap
+#         from typologies_joined tj
+#         inner join (
+#             select distinct tj.objectid, st_intersects(tj.geom, u.geom)
+#             from typologies_joined tj
+#             left join urbancore u
+#             on st_intersects(tj.geom, u.geom)) foo
+#         on tj.objectid = foo.objectid""",
+#     con=ENGINE,
+#     geom_col="geom",
+# )
+# # put results back in db
+# tbl.to_postgis("typologies_joined", con=ENGINE, if_exists="replace")
 
-### assign activity levels
-a1 = update(T).values(activity_level="low").where(T.c.TYPOLOGY == "Narrow Neighborhood")
-a2 = update(T).values(activity_level="low").where(T.c.TYPOLOGY == "Wide Neighborhood")
-a3 = update(T).values(activity_level="mod").where(T.c.TYPOLOGY == "Narrow Connector")
-a4 = update(T).values(activity_level="mod").where(T.c.TYPOLOGY == "Wide Connector")
-a5 = update(T).values(activity_level="high").where(T.c.uc_overlap == True)
-statements = [a1, a2, a3, a4, a5]
-for s in statements:
-    conn.execute(s)
-    conn.commit()
+# ### assign activity levels
+# a1 = update(T).values(activ_level="low").where(T.c.TYPOLOGY == "Narrow Neighborhood")
+# a2 = update(T).values(activ_level="low").where(T.c.TYPOLOGY == "Wide Neighborhood")
+# a3 = update(T).values(activ_level="mod").where(T.c.TYPOLOGY == "Narrow Connector")
+# a4 = update(T).values(activ_level="mod").where(T.c.TYPOLOGY == "Wide Connector")
+# a5 = update(T).values(activ_level="high").where(T.c.uc_overlap != None)
+# statements = [a1, a2, a3, a4, a5]
+# for s in statements:
+#     conn.execute(s)
+#     conn.commit()
 
 ### calculate intersection density
 # intersection points created in QGIS using the process outlined here: https://www.qgistutorials.com/en/docs/3/calculating_intersection_density.html
