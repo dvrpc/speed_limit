@@ -10,6 +10,7 @@ This script filters and imports the required datasets from provided shapefiles a
     - urban core (from typologies work)
     - PA Centerline
     - circuit trails
+    - road intersections (created in QGIS)
 
 """
 
@@ -47,6 +48,7 @@ urbancore.to_postgis("urbancore", con=ENGINE, if_exists="replace")
 
 # read road intersections from geojson
 road_intersections = gpd.read_file(rf"{ev.DATA_ROOT}\road_intersections.geojson")
+road_intersections = road_intersections.to_crs(26918)
 road_intersections.to_postgis("road_intersections", con=ENGINE, if_exists="replace")
 
 # read HIN from GIS database
