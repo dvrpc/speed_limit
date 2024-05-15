@@ -238,6 +238,7 @@ for s in statements:
 #     where tj.objectid = p.objectid;"""
 # )
 
+from sqlalchemy import cast, Numeric
 
 # re-grab table
 conn = ENGINE.connect()
@@ -245,8 +246,9 @@ meta = MetaData()
 meta.reflect(bind=ENGINE)
 T = meta.tables["typologies_joined_c"]
 
+
 # assign intersection density level
-id1 = update(T).values(int_den="low").where(T.c.pts_qt_mi < 1)
+id1 = update(T).values(int_den="low").where(cast(T.c.pts_qt_mi, Numeric(10, 2)) < 1)
 id2 = update(T).values(int_den="mod").where(T.c.pts_qt_mi >= 1).where(T.c.pts_qt_mi < 3)
 id3 = update(T).values(int_den="high").where(T.c.pts_qt_mi >= 3)
 statements = [id1, id2, id3]
