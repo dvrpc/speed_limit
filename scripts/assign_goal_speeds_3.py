@@ -14,7 +14,7 @@ meta.reflect(bind=ENGINE)
 T = meta.tables["typologies_joined"]
 
 
-# # assign intersection density level
+# assign intersection density level
 id1 = update(T).values(int_den="low").where(T.c.pts_qt_mi < 1)
 id2 = update(T).values(int_den="mod").where(T.c.pts_qt_mi >= 1).where(T.c.pts_qt_mi < 3)
 id3 = update(T).values(int_den="high").where(T.c.pts_qt_mi >= 3)
@@ -181,7 +181,7 @@ for s in statements:
     conn.commit()
 
 
-# if current posted speed is greater than default speed, defer to posted speed
+# if current posted speed is greater than default speed, defer to posted speed (still only 9 of these)
 ps1 = (
     update(T)
     .values(default_speed=T.c.SPD_LIMIT)
@@ -189,4 +189,16 @@ ps1 = (
 )
 
 conn.execute(ps1)
+conn.commit()
+
+# for consistency, overwrite sinle section of 35 mph (to 25 because that is what surrounds it)
+z1 = update(T).values(default_speed=25).where(T.c.default_speed == 35)
+
+conn.execute(z1)
+conn.commit()
+
+# fill in any nulls (missing due to conflation issues) with 25
+n1 = update(T).values(default_speed=25).where(T.c.default_speed == None)
+
+conn.execute(n1)
 conn.commit()
