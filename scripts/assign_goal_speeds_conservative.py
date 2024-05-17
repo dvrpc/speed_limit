@@ -43,7 +43,8 @@ with ENGINE.connect() as conn:
             alter table typologies_joined_c add column if not exists pts_qt_mi float;
             alter table typologies_joined_c add column if not exists conf_dens text;
             alter table typologies_joined_c add column if not exists default_speed int;
-            alter table typologies_joined_c add column if not exists int_den text;
+            alter table typologies_joined_c add column if not exists use_sl_flag text;
+            alter table typologies_joined_c add column if not exists speed_to_use int;
             COMMIT;
             """
         )
@@ -237,7 +238,7 @@ for s in statements:
 #     from pts_in_buff_c p
 #     where tj.objectid = p.objectid;"""
 # )
-
+"""
 from sqlalchemy import cast, Numeric
 
 # re-grab table
@@ -375,3 +376,14 @@ statements = [ds1, ds2, ds3, ds4, ds5, ds6, ds7, ds8, ds9]
 for s in statements:
     conn.execute(s)
     conn.commit()
+
+"""
+
+# existing speed limit overwrite
+# regrab table
+conn = ENGINE.connect()
+meta = MetaData()
+meta.reflect(bind=ENGINE)
+T = meta.tables["typologies_joined_c"]
+# flag for existing speed limit higher than default speed limit
+sl1 = update(T).values(use_sl_flag="Y").where(T.c.default_speed > T.c.SPD_LIMIT)
