@@ -34,3 +34,13 @@ cd dvrpc_shared/speed_limit
 ve\scripts\activate
 python scripts/{script_name}.py
 ```
+
+### Order of opperations
+
+1. data_setup.py
+2. conflator_bike.py
+3. conflator_sidewalks.py
+4. conflator_circuittrails.py
+5. assign_goal_speeds_1.py
+6. assign_goal_speeds_2.py
+7. assign_goal_speeds_3.py
