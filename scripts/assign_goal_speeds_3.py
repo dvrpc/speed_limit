@@ -144,8 +144,25 @@ for s in statements:
     conn.execute(s)
     conn.commit()
 
-
 ##### overwrites #####
+# if a road is in the urban core and is characteriszed as narrow in typologies, default speed should be 20
+ucn1 = (
+    update(T)
+    .values(default_speed=20)
+    .where(T.c.uc_overlap == 1)
+    .where(T.c.TYPOLOGY == "Narrow Neighborhood")
+)
+ucn2 = (
+    update(T)
+    .values(default_speed=20)
+    .where(T.c.uc_overlap == 1)
+    .where(T.c.TYPOLOGY == "Narrow Connector")
+)
+statements = [ucn1, ucn2]
+for s in statements:
+    conn.execute(s)
+    conn.commit()
+
 # if there is more than 1 lane in each direction, 25 should be the minimum
 l1 = (
     update(T)
@@ -175,11 +192,28 @@ c3 = (
     .values(default_speed=25)
     .where(T.c.STREET_NAM == "MARTIN LUTHER KING JR DR")
 )
-statements = [c1, c2, c3]
+c4 = update(T).values(default_speed=25).where(T.c.STREET_NAM == "COBBS CREEK PY")
+statements = [c1, c2, c3, c4]
 for s in statements:
     conn.execute(s)
     conn.commit()
 
+
+# highway-like roads should be 30
+hw1 = update(T).values(default_speed=30).where(T.c.STREET_NAM == "PENROSE AV")
+hw2 = update(T).values(default_speed=30).where(T.c.STREET_NAM == "TWENTYSIXTH ST")
+hw3 = update(T).values(default_speed=30).where(T.c.STREET_NAM == "ROOSEVELT BL")
+# Broad St south of I-76; selected by objectid
+hw4 = update(T).values(default_speed=30).where(T.c.objectid == 103769)
+hw5 = update(T).values(default_speed=30).where(T.c.objectid == 103770)
+hw6 = update(T).values(default_speed=30).where(T.c.objectid == 103771)
+hw7 = update(T).values(default_speed=30).where(T.c.objectid == 103772)
+hw8 = update(T).values(default_speed=30).where(T.c.objectid == 117415)
+hw9 = update(T).values(default_speed=30).where(T.c.objectid == 117416)
+statements = [hw1, hw2, hw3, hw4, hw5, hw6, hw7, hw8, hw9]
+for s in statements:
+    conn.execute(s)
+    conn.commit()
 
 # if current posted speed is greater than default speed, defer to posted speed (still only 9 of these)
 ps1 = (
