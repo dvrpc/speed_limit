@@ -13,7 +13,7 @@ meta = MetaData()
 meta.reflect(bind=ENGINE)
 T = meta.tables["typologies_joined"]
 
-
+"""
 # assign intersection density level
 id1 = update(T).values(int_den="low").where(T.c.pts_qt_mi < 1)
 id2 = update(T).values(int_den="mod").where(T.c.pts_qt_mi >= 1).where(T.c.pts_qt_mi < 3)
@@ -143,26 +143,9 @@ statements = [ds1, ds2, ds3, ds4, ds5, ds6, ds7, ds8, ds9]
 for s in statements:
     conn.execute(s)
     conn.commit()
+"""
 
 ##### overwrites #####
-# if a road is in the urban core and is characteriszed as narrow in typologies, default speed should be 20
-ucn1 = (
-    update(T)
-    .values(default_speed=20)
-    .where(T.c.uc_overlap == 1)
-    .where(T.c.TYPOLOGY == "Narrow Neighborhood")
-)
-ucn2 = (
-    update(T)
-    .values(default_speed=20)
-    .where(T.c.uc_overlap == 1)
-    .where(T.c.TYPOLOGY == "Narrow Connector")
-)
-statements = [ucn1, ucn2]
-for s in statements:
-    conn.execute(s)
-    conn.commit()
-
 # if there is more than 1 lane in each direction, 25 should be the minimum
 l1 = (
     update(T)
@@ -179,6 +162,24 @@ l2 = (
     .where(T.c.default_speed < 25)
 )
 statements = [l1, l2]
+for s in statements:
+    conn.execute(s)
+    conn.commit()
+
+# if a road is in the urban core and is characteriszed as narrow in typologies, default speed should be 20
+ucn1 = (
+    update(T)
+    .values(default_speed=20)
+    .where(T.c.uc_overlap != None)
+    .where(T.c.TYPOLOGY == "Narrow Neighborhood")
+)
+ucn2 = (
+    update(T)
+    .values(default_speed=20)
+    .where(T.c.uc_overlap != None)
+    .where(T.c.TYPOLOGY == "Narrow Connector")
+)
+statements = [ucn1, ucn2]
 for s in statements:
     conn.execute(s)
     conn.commit()
