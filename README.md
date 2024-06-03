@@ -44,3 +44,4 @@ python scripts/{script_name}.py
 5. assign_goal_speeds_1.py
 6. assign_goal_speeds_2.py
 7. assign_goal_speeds_3.py
+8. assign_goal_speeds_4.py
