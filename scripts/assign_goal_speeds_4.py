@@ -1,3 +1,9 @@
+#####
+# This script adjusts for mismatches in assigned default speeds on opposite sides of divided roads
+# Speeds are based on the most common speed on the surrounding segments
+#####
+
+
 import pandas as pd
 import geopandas as gpd
 import os

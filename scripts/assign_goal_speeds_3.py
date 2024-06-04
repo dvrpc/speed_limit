@@ -13,7 +13,7 @@ meta = MetaData()
 meta.reflect(bind=ENGINE)
 T = meta.tables["typologies_joined"]
 
-"""
+
 # assign intersection density level
 id1 = update(T).values(int_den="low").where(T.c.pts_qt_mi < 1)
 id2 = update(T).values(int_den="mod").where(T.c.pts_qt_mi >= 1).where(T.c.pts_qt_mi < 3)
@@ -143,7 +143,7 @@ statements = [ds1, ds2, ds3, ds4, ds5, ds6, ds7, ds8, ds9]
 for s in statements:
     conn.execute(s)
     conn.commit()
-"""
+
 
 ##### overwrites #####
 # if there is more than 1 lane in each direction, 25 should be the minimum
